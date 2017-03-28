@@ -22,6 +22,13 @@ class Subject(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128))
     code = db.Column(db.String(128))
+    course_id = db.Column(db.Integer)
+
+class Course(db.Model):
+    __tablename__ = 'course'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128))
+    branch = db.Column(db.String(128))
 
 class Result(db.Model):
     __tablename__ = 'result'
@@ -35,6 +42,7 @@ class Result(db.Model):
     sub6 = db.Column(db.String(8))
     sub7 = db.Column(db.String(8))
     sub8 = db.Column(db.String(8))
+    course_id = db.Column(db.Integer)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
@@ -49,34 +57,50 @@ def process_pdf(pdf_filename):
     subjects = []
     next_line = ''
     students = []
+
     for line in fp:
         line = line.strip()
 
         reg = re.compile('^Register Number')
-        course = re.compile('^Course Code')
+        subj = re.compile('^Course Code')
+        branch = re.compile('^[A-Z]{2}\(.*\)')
         sub = re.compile('^\d{2}[A-Z]{2}\d{4} .*')
-        if reg.match(line):
+        if branch.match(line):
+            branch = line[:2]
+            topic = line[3:]
+            topic = topic.rstrip(')')
+            if not Course.query.filter_by(name=topic).first():
+                c = Course(name=topic, branch=branch)
+                db.session.add(c)
+                db.session.commit()
+                course_id = c.id
+            next_line = 'subject_heading'
+
+        elif reg.match(line):
             next_line = 'result'
-        elif course.match(line):
+        elif subj.match(line) and next_line == 'subject_heading':
             next_line = 'sub'
         elif next_line == 'sub' and sub.match(line):
             subject = line.split(' ', 1)
+            subject.append(course_id)
             subjects.append(subject)
         elif next_line == 'result':
             l = line.split()
             if len(l[0]) is 11 and len(l) is 8:
+                l.append(course_id)
                 students.append(l)
         elif sub.match(line):
             subject = line.split(' ', 1)
+            subject.append(course_id)
             subjects.append(subject)
         else:
             next_line = ''
 
     for s in subjects:
-        db.session.add(Subject(code=s[0], name=s[1]))
+        if not Subject.query.filter_by(code=s[0]).first():
+            db.session.add(Subject(code=s[0], name=s[1], course_id=s[2]))
     for st in students:
-        if len(st) == 8:
-            db.session.add(Result(reg=st[0], sub1=st[1], sub2=st[2], sub3=st[3], sub4=st[4], sub5=st[5], sub6=st[6], sub7=st[7]))
+        db.session.add(Result(reg=st[0], sub1=st[1], sub2=st[2], sub3=st[3], sub4=st[4], sub5=st[5], sub6=st[6], sub7=st[7], course_id=st[8]))
     db.session.commit()
 
 @app.route('/admin', methods=['GET', 'POST'])
@@ -105,15 +129,17 @@ def admin():
 @app.route('/', methods=['GET', 'POST'])
 def result():
     result = ''
+    subjects = []
     if request.method == 'POST' and request.form['reg'] != '':
         reg = request.form['reg']
         result = Result.query.filter_by(reg=reg).first()
+        subjects = Subject.query.filter_by(course_id=result.course_id)
         if not result:
             flash('result not found')
             return redirect(request.url)
 
 
-    return render_template('index.html', result=result)
+    return render_template('index.html', result=result, subjects=subjects)
 
 if __name__ == '__main__':
     app.debug = True
