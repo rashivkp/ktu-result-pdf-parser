@@ -17,6 +17,11 @@ pip install -r requirements.txt
 
 this  will install all the requirements
 
+```
+python app.py db init
+python app.py db upgrade
+```
+
 
 ### Run server
 
