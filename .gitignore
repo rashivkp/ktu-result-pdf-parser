@@ -1,0 +1,4 @@
+uploads/*
+!uploads/.gitkeep
+stripped/*
+!stripped/.gitkeep
