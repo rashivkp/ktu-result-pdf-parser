@@ -81,48 +81,31 @@
                   {% endif %}
                   {% endwith %}
 
-                    <form action="" method="post">
-                      <input type="text" placeholder="Register Number" name="reg" id="reg">
-                      <input type="submit" value="Search">
-                    </form>
-                    {% if result %}
-                    <table class="table">
-                      <thead>
-                        <th>Subject</th>
-                        <th>Score</th>
-                      </thead>
-                      <tbody>
-                      <tr>
-                        <th>Subject 1</th>
-                        <td>{{ result.sub1 }}</td>
-                      </tr>
-                      <tr>
-                        <th>Subject 2</th>
-                        <td>{{ result.sub2 }}</td>
-                      </tr>
-                      <tr>
-                        <th>Subject 3</th>
-                        <td>{{ result.sub3 }}</td>
-                      </tr>
-                      <tr>
-                        <th>Subject 4</th>
-                        <td>{{ result.sub4 }}</td>
-                      </tr>
-                      <tr>
-                        <th>Subject 5</th>
-                        <td>{{ result.sub5 }}</td>
-                      </tr>
-                      <tr>
-                        <th>Subject 6</th>
-                        <td>{{ result.sub6 }}</td>
-                      </tr>
-                      <tr>
-                        <th>Subject 7</th>
-                        <td>{{ result.sub7 }}</td>
-                      </tr>
-                      </tbody>
-                    </table>
-                    {% endif %}
+                  <form method="post" class="form-horizontal" enctype="multipart/form-data" >
+                  <fieldset>
+
+                  <!-- Form Name -->
+                  <legend>Upload the doc</legend>
+
+                  <!-- Textarea -->
+                  <div class="form-group">
+                    <label class="col-md-4 control-label" for="pdf">Pdf</label>
+                    <div class="col-md-4">
+                      <input type="file" class="" id="pdf" name="pdf" />
+                    </div>
+                  </div>
+
+                  <!-- Button -->
+                  <div class="form-group">
+                    <label class="col-md-4 control-label" for="submit"></label>
+                    <div class="col-md-4">
+                      <button id="submit" name="submit" class="btn btn-primary">Parse</button>
+                    </div>
+                  </div>
+
+                  </fieldset>
+                  </form>
+
                 </div>
             </div>
         </div>
@@ -173,3 +156,4 @@
 </body>
 
 </html>
+
