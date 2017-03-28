@@ -2,3 +2,7 @@ uploads/*
 !uploads/.gitkeep
 stripped/*
 !stripped/.gitkeep
+
+*.pyc
+*.pdf
+
