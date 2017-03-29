@@ -60,6 +60,7 @@ def process_pdf(pdf_filename):
 
     for line in fp:
         line = line.strip()
+        print line
 
         reg = re.compile('^Register Number')
         subj = re.compile('^Course Code')
@@ -133,11 +134,11 @@ def result():
     if request.method == 'POST' and request.form['reg'] != '':
         reg = request.form['reg']
         result = Result.query.filter_by(reg=reg).first()
-        subjects = Subject.query.filter_by(course_id=result.course_id)
         if not result:
             flash('result not found')
             return redirect(request.url)
 
+        subjects = Subject.query.filter_by(course_id=result.course_id)
 
     return render_template('index.html', result=result, subjects=subjects)
 
