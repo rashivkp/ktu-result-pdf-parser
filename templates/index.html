@@ -92,34 +92,12 @@
                         <th>Score</th>
                       </thead>
                       <tbody>
+		      {% for r in result %}
                       <tr>
-                        <th>{{subjects[0].name}}</th>
-                        <td>{{ result.sub1 }}</td>
+                        <th>{{ r.sub }}</th>
+                        <td>{{ r.score }}</td>
                       </tr>
-                      <tr>
-                        <th>{{subjects[1].name}}</th>
-                        <td>{{ result.sub2 }}</td>
-                      </tr>
-                      <tr>
-                        <th>{{subjects[2].name}}</th>
-                        <td>{{ result.sub3 }}</td>
-                      </tr>
-                      <tr>
-                        <th>{{subjects[3].name}}</th>
-                        <td>{{ result.sub4 }}</td>
-                      </tr>
-                      <tr>
-                        <th>{{subjects[4].name}}</th>
-                        <td>{{ result.sub5 }}</td>
-                      </tr>
-                      <tr>
-                        <th>{{subjects[5].name}}</th>
-                        <td>{{ result.sub6 }}</td>
-                      </tr>
-                      <tr>
-                        <th>{{subjects[6].name}}</th>
-                        <td>{{ result.sub7 }}</td>
-                      </tr>
+                      {% endfor %}
                       </tbody>
                     </table>
                     {% endif %}

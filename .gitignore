@@ -6,3 +6,4 @@ stripped/*
 *.pyc
 *.pdf
 
+!sample_pdf/*.pdf

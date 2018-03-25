@@ -10,7 +10,7 @@ ALLOWED_EXTENSIONS = set(['pdf'])
 app = Flask(__name__)
 app.secret_key = 'sdfakjkj'
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://pdfparser:password@localhost/pdfdata'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:jithu@localhost/pdf1'
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
@@ -28,21 +28,15 @@ class Course(db.Model):
     __tablename__ = 'course'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128))
-    branch = db.Column(db.String(128))
+    type = db.Column(db.String(128))
 
 class Result(db.Model):
     __tablename__ = 'result'
     id = db.Column(db.Integer, primary_key=True)
-    reg = db.Column(db.String(128))
-    sub1 = db.Column(db.String(8))
-    sub2 = db.Column(db.String(8))
-    sub3 = db.Column(db.String(8))
-    sub4 = db.Column(db.String(8))
-    sub5 = db.Column(db.String(8))
-    sub6 = db.Column(db.String(8))
-    sub7 = db.Column(db.String(8))
-    sub8 = db.Column(db.String(8))
     course_id = db.Column(db.Integer)
+    reg = db.Column(db.String(128))
+    sub = db.Column(db.String(8))
+    score = db.Column(db.String(16))
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
@@ -56,24 +50,33 @@ def process_pdf(pdf_filename):
     fp = open("stripped/"+filename)
     subjects = []
     next_line = ''
+    student_subjects = []
     students = []
+    st = None
+
+    reg = re.compile('^Register No')
+    subj = re.compile('^Course Code')
+    branch = re.compile('^([A-Z| ]*)\[(.*)\]')
+    sub = re.compile('^\d{2}[A-Z]{2}\d{4} .*')
+    regV = re.compile('^L?[A-Z]{3}\d{2}[A-Z]{2}\d{3} .*')
+    resultValue = re.compile('^[A-Z]{2}\d{3}\(.*')
 
     for line in fp:
         line = line.strip()
-        print line
-
-        reg = re.compile('^Register Number')
-        subj = re.compile('^Course Code')
-        branch = re.compile('^[A-Z]{2}\(.*\)')
-        sub = re.compile('^\d{2}[A-Z]{2}\d{4} .*')
+        
         if branch.match(line):
-            branch = line[:2]
-            topic = line[3:]
-            topic = topic.rstrip(')')
-            if not Course.query.filter_by(name=topic).first():
-                c = Course(name=topic, branch=branch)
+            print line
+            k = branch.search(line)
+            topic = k.group(1)
+            type = k.group(2)
+            print topic
+            c = Course.query.filter_by(name=topic).first()
+            if not c:
+                c = Course(name=topic, type=type)
                 db.session.add(c)
                 db.session.commit()
+                course_id = c.id
+            else:
                 course_id = c.id
             next_line = 'subject_heading'
 
@@ -85,11 +88,25 @@ def process_pdf(pdf_filename):
             subject = line.split(' ', 1)
             subject.append(course_id)
             subjects.append(subject)
-        elif next_line == 'result':
+        #elif next_line == 'result':
+        elif next_line == 'result' and resultValue.match(line):
             l = line.split()
-            if len(l[0]) is 11 and len(l) is 8:
-                l.append(course_id)
-                students.append(l)
+            for s in l:
+                m = re.search('([A-Z]{2}\d{3})\((\w+\+?)\),?', s)
+                if m is not None:
+                    db.session.add(Result(reg=st, sub=m.group(1), score=m.group(2), course_id=course_id))
+            st = None
+
+            #if len(l[0]) is 11 and len(l) is 8:
+                #l.append(course_id)
+                #students.append(l)
+        elif next_line == 'result' and regV.match(line):
+            l = line.split()
+            st = l[0]
+            for s in l[1:]:
+                m = re.search('([A-Z]{2}\d{3})\((\w+\+?)\),?', s)
+                if m is not None:
+                    db.session.add(Result(reg=l[0], sub=m.group(1), score=m.group(2), course_id=course_id))
         elif sub.match(line):
             subject = line.split(' ', 1)
             subject.append(course_id)
@@ -100,8 +117,8 @@ def process_pdf(pdf_filename):
     for s in subjects:
         if not Subject.query.filter_by(code=s[0]).first():
             db.session.add(Subject(code=s[0], name=s[1], course_id=s[2]))
-    for st in students:
-        db.session.add(Result(reg=st[0], sub1=st[1], sub2=st[2], sub3=st[3], sub4=st[4], sub5=st[5], sub6=st[6], sub7=st[7], course_id=st[8]))
+    #for st in students:
+        #db.session.add(Result(reg=st[0], sub1=st[1], sub2=st[2], sub3=st[3], sub4=st[4], sub5=st[5], sub6=st[6], sub7=st[7], course_id=st[8]))
     db.session.commit()
 
 @app.route('/admin', methods=['GET', 'POST'])
@@ -133,12 +150,12 @@ def result():
     subjects = []
     if request.method == 'POST' and request.form['reg'] != '':
         reg = request.form['reg']
-        result = Result.query.filter_by(reg=reg).first()
+        result = Result.query.filter_by(reg=reg)
         if not result:
             flash('result not found')
             return redirect(request.url)
 
-        subjects = Subject.query.filter_by(course_id=result.course_id)
+        subjects = Subject.query.filter_by(course_id=result.first().course_id)
 
     return render_template('index.html', result=result, subjects=subjects)
 
