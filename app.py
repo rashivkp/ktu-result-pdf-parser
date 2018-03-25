@@ -151,7 +151,7 @@ def result():
     if request.method == 'POST' and request.form['reg'] != '':
         reg = request.form['reg']
         result = Result.query.filter_by(reg=reg)
-        if not result:
+        if not result.first():
             flash('result not found')
             return redirect(request.url)
 
